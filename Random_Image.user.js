@@ -46,7 +46,7 @@ let pickBoard = () =>
     return Promise.resolve(board);
   });
 
-let pickFile = (board) =>
+let pickURL = (board) =>
   fetchJSON(`//a.4cdn.org/${board}/catalog.json`).then(response => {
     let replies = [];
     response.forEach(p =>
@@ -62,8 +62,21 @@ let pickFile = (board) =>
     return Promise.resolve({url, name});
   });
 
-let setFile = (file, name) => {
-  let detail = {file, name};
+let pickImage = () => {
+  let name;
+  return pickBoard()
+    .then(pickURL)
+    .then(d => {
+      name = d.name;
+      return Promise.resolve(d.url);
+    })
+    .then(fetchImage)
+    .then((file) =>
+      Promise.resolve({file, name})
+    );
+};
+
+let setFile = (detail) => {
   if (typeof cloneInto === 'function') {
     detail = cloneInto(detail, document.defaultView);
   }
@@ -72,18 +85,8 @@ let setFile = (file, name) => {
   document.getElementById('qr').classList.add('dump');
 };
 
-let pickImage = () => {
-  let name;
-  pickBoard()
-    .then(pickFile)
-    .then(d => {
-      name = d.name;
-      return Promise.resolve(d.url);
-    }).then(fetchImage)
-    .then((file) => {
-      setFile(file, name);
-    });
-};
+let setRandomImage = () =>
+  pickImage().then(setFile);
 
 let onQRExist = () =>
   new Promise((resolve, reject) => {
@@ -113,10 +116,10 @@ let insertButton = () => {
   let a = document.createElement('a');
   a.className = 'qr-new-image fa fa-refresh';
   a.style.opacity = '0.8';
-  a.addEventListener('click', pickImage, false);
+  a.addEventListener('click', setRandomImage, false);
   let pos = document.getElementById('qr-spoiler-label');
   pos.parentNode.insertBefore(a, pos.nextSibling);
 };
 
 onQRExist().then(insertButton);
-onQROpen(pickImage);
+onQROpen(setRandomImage);
