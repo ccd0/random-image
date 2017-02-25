@@ -62,7 +62,7 @@ let pickURL = (board) =>
     return Promise.resolve({url, name});
   });
 
-let pickImage = () => {
+let pickImage = (maxTries = 5) => {
   let name;
   return pickBoard()
     .then(pickURL)
@@ -71,9 +71,15 @@ let pickImage = () => {
       return Promise.resolve(d.url);
     })
     .then(fetchImage)
-    .then((file) =>
-      Promise.resolve({file, name})
-    );
+    .then((file) => {
+      if (/^(image|video)\//.test(file.type)) {
+        return Promise.resolve({file, name});
+      } else if (maxTries > 0) {
+        return Promise.resolve(pickImage(maxTries - 1));
+      } else {
+        return Promise.reject(new Error('could not download image'));
+      }
+    });
 };
 
 let setFile = (detail) => {
