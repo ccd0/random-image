@@ -59,6 +59,9 @@ let pickURL = (board) =>
     let r = pick(replies);
     let url = `http://i.4cdn.org/${board}/${r.tim}${r.ext}`;
     let name = `${r.filename}${r.ext}`;
+    name = name.replace(/&(amp|#039|quot|lt|gt);/g, (c) =>
+      ({'&amp;': '&', '&#039;': "'", '&quot;': '"', '&lt;': '<', '&gt;': '>'})[c]
+    );
     return Promise.resolve({url, name});
   });
 
