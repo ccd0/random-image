@@ -46,7 +46,7 @@ let pickBoard = () =>
     return Promise.resolve(board);
   });
 
-let pickURL = (board) =>
+let pickURLs = (board, count) =>
   fetchJSON(`//a.4cdn.org/${board}/catalog.json`).then(response => {
     let replies = [];
     response.forEach(p =>
@@ -56,14 +56,73 @@ let pickURL = (board) =>
         })
       )
     );
-    let r = pick(replies);
-    let url = `http://i.4cdn.org/${board}/${r.tim}${r.ext}`;
-    let name = `${r.filename}${r.ext}`;
-    name = name.replace(/&(amp|#039|quot|lt|gt);/g, (c) =>
-      ({'&amp;': '&', '&#039;': "'", '&quot;': '"', '&lt;': '<', '&gt;': '>'})[c]
-    );
-    return Promise.resolve({url, name});
+    urls = [];
+    for (let i = 0; i < count; i++) {
+      let r = pick(replies);
+      let url = `http://i.4cdn.org/${board}/${r.tim}${r.ext}`;
+      let thumb = `http://i.4cdn.org/${board}/${r.tim}s.jpg`;
+      let name = `${r.filename}${r.ext}`;
+      name = name.replace(/&(amp|#039|quot|lt|gt);/g, (c) =>
+        ({'&amp;': '&', '&#039;': "'", '&quot;': '"', '&lt;': '<', '&gt;': '>'})[c]
+      );
+      urls.push({url, thumb, name});
+    }
+    return Promise.resolve(urls);
   });
+
+let loadImage = (file) =>
+  new Promise((resolve, reject) => {
+    let img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = URL.createObjectURL(file);
+  });
+
+let score = (img) => {
+  let canvas, ctx, data, len, i, j, av, total, maxdim;
+  canvas = document.createElement('canvas');
+  canvas.width = img.naturalWidth;
+  canvas.height = img.naturalHeight;
+  ctx = canvas.getContext('2d');
+  ctx.drawImage(img, 0, 0);
+  data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+  len = data.length;
+  total = 0;
+  for (i = 0; i < len; i += 4) {
+    av = 0;
+    for (j = 0; j < 3; j++) av += data[i+j];
+    for (j = 0; j < 3; j++) total += Math.abs(3*data[i+j] - av) * data[i+3];
+  }
+  maxdim = Math.max(canvas.width, canvas.height);
+  return total / (4*255*255*maxdim*maxdim);
+};
+
+let pickURL = (board) =>
+  pickURLs(board, 5)
+    .then(urls =>
+      Promise.all(urls.map(d =>
+        fetchImage(d.thumb)
+          .then(loadImage)
+          .then(img => {
+            d.score = score(img);
+            return Promise.resolve(d);
+          })
+          .catch(() => Promise.resolve(null))
+      ))
+    )
+    .then(urls => {
+      let urls2 = urls.filter(x => x);
+      if (urls2.length === 0) {
+        return Promise.resolve(urls[0]);
+      }
+      let best;
+      urls2.forEach(d => {
+        if (!best || d.score > best.score) {
+          best = d;
+        }
+      });
+      return Promise.resolve(best);
+    });
 
 let pickImage = (maxTries = 5) => {
   let name;
