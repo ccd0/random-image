@@ -5,7 +5,7 @@
 // @include     http://boards.4chan.org/*
 // @include     https://boards.4chan.org/*
 // @connect     i.4cdn.org
-// @version     0.1.0
+// @version     0.1.1
 // @grant       GM_xmlhttpRequest
 // ==/UserScript==
 
