@@ -4,6 +4,7 @@
 // @description Load a random image from 4chan into the 4chan X Quick Reply.
 // @include     http://boards.4chan.org/*
 // @include     https://boards.4chan.org/*
+// @connect     i.4cdn.org
 // @version     0.1.0
 // @grant       GM_xmlhttpRequest
 // ==/UserScript==
@@ -50,8 +51,16 @@ let fetchImage = (url) =>
     GM_xmlhttpRequest({
       method: 'GET',
       url,
-      responseType: 'blob',
-      onload: (r) => resolve(r.response),
+      responseType: 'arraybuffer',
+      onload: (r) => {
+        if (r.status === 200) {
+          let match = r.responseHeaders.match(/^Content-Type:\s*(.*)$/mi);
+          let type = match ? match[1] : undefined;
+          resolve(new Blob([r.response], {type}));
+        } else {
+          reject(new Error(`${r.status} ${r.statusText}`));
+        }
+      },
       onerror: reject,
       onabort: reject
     });
@@ -156,10 +165,11 @@ let pickImage = (maxTries = 5) => {
       return Promise.resolve(d.url);
     })
     .then(fetchImage)
-    .then((file) => {
-      if (/^(image|video)\//.test(file.type)) {
-        return Promise.resolve({file, name});
-      } else if (maxTries > 0) {
+    .then((file) =>
+      Promise.resolve({file, name})
+    )
+    .catch(() => {
+      if (maxTries > 0) {
         return Promise.resolve(pickImage(maxTries - 1));
       } else {
         return Promise.reject(new Error('could not download image'));
