@@ -1,6 +1,7 @@
 // ==UserScript==
 // @name        Random Image
 // @namespace   https://github.com/ccd0
+// @description Load a random image from 4chan into the 4chan X Quick Reply.
 // @include     http://boards.4chan.org/*
 // @include     https://boards.4chan.org/*
 // @version     0.0.1
