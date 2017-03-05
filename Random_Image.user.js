@@ -91,8 +91,8 @@ let pickURLs = (board, count) =>
     urls = [];
     for (let i = 0; i < count; i++) {
       let r = pick(replies);
-      let url = `http://i.4cdn.org/${board}/${r.tim}${r.ext}`;
-      let thumb = `http://i.4cdn.org/${board}/${r.tim}s.jpg`;
+      let url = `${location.protocol}//i.4cdn.org/${board}/${r.tim}${r.ext}`;
+      let thumb = `${location.protocol}//i.4cdn.org/${board}/${r.tim}s.jpg`;
       let name = `${r.filename}${r.ext}`;
       name = name.replace(/&(amp|#039|quot|lt|gt);/g, (c) =>
         ({'&amp;': '&', '&#039;': "'", '&quot;': '"', '&lt;': '<', '&gt;': '>'})[c]
